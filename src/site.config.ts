@@ -54,7 +54,7 @@ export const theme: ThemeUserConfig = {
       { title: 'Links', link: '/links' },
       { title: 'About', link: '/about' },
       { title: 'Timeline', link: '/archives' },
-      { title: '中文', link: 'https://maxtonniu.com/' }
+      { title: '中文', link: '#switch-lang' }
     ]
   },
 
@@ -126,7 +126,7 @@ export const integ: IntegrationUserConfig = {
       { name: 'Name', val: theme.title },
       { name: 'Desc', val: theme.description || 'Null' },
       { name: 'Link', val: 'https://en.maxtonniu.com/' }, //记得改
-      { name: 'Avatar', val: 'https://astro-pure.js.org/favicon/favicon.ico' }
+      { name: 'Avatar', val: 'https://en.maxtonniu.com/favicon/favicon.ico' }
     ],
     // Cache avatars in `public/avatars/` to improve user experience.
     cacheAvatar: false

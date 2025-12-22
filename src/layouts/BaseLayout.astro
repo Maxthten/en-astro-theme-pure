@@ -24,8 +24,36 @@ const {
 <html lang={config.locale.lang}>
   <head>
     <BaseHead {articleDate} {description} {ogImage} {title} />
-    <ThemeProvider />
-  </head>
+    <head>
+  <BaseHead {articleDate} {description} {ogImage} {title} />
+  
+  <script is:inline>
+    (function() {
+      // 获取 URL 里的 sync_theme 参数
+      const params = new URLSearchParams(window.location.search);
+      const theme = params.get('sync_theme');
+      
+      if (theme) {
+        // 1. 强制写入本地存储，这样按钮初始化时就能读到正确的值
+        localStorage.setItem('theme', theme);
+        
+        // 2. 立即应用到网页，防止闪烁
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+          document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+          document.documentElement.setAttribute('data-theme', 'light');
+        }
+        
+        // 3. (关键) 派发一个事件，通知那个按钮组件“主题变了，快刷新图标”
+        // 很多 Astro 主题都监听这个事件
+        document.dispatchEvent(new CustomEvent('theme-change', { detail: { theme } }));
+      }
+    })();
+  </script>
+  <ThemeProvider />
+</head>
 
   <body class='flex justify-center bg-background text-foreground' {...props}>
     {
@@ -64,5 +92,40 @@ const {
         ) !important;
       }
     </style>
+    <script is:inline>
+    // ===========================================
+    // 🟢 这里填写目标域名 (不要带末尾的斜杠 /)
+    const targetDomain = 'https://zh.maxtonniu.com/'; 
+    // ===========================================
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const langBtn = document.querySelector('a[href="#switch-lang"]');
+      
+      if (langBtn) {
+        // 1. 获取当前路径，确保是 / 开头的
+        let currentPath = window.location.pathname;
+        if (!currentPath.startsWith('/')) {
+            currentPath = '/' + currentPath;
+        }
+
+        // 2. 获取当前主题 (默认为 light)
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        
+        // 3. 拼接完整 URL
+        // 逻辑：目标域名 + 当前路径 + 主题参数
+        // 解决 404 的关键：确保 targetDomain 没斜杠，currentPath 有斜杠
+        const cleanDomain = targetDomain.replace(/\/$/, ''); // 去掉域名末尾多余斜杠
+        const finalUrl = `${cleanDomain}${currentPath}?sync_theme=${currentTheme}`;
+
+        // 4. 应用链接
+        langBtn.href = finalUrl;
+
+        // 5. 鼠标放上去时再次刷新 (确保主题状态是最新的)
+        langBtn.addEventListener('mouseenter', () => {
+           const latestTheme = localStorage.getItem('theme') || 'light';
+           langBtn.href = `${cleanDomain}${currentPath}?sync_theme=${latestTheme}`;
+        });
+      }
+    });
+  </script>
   </body>
-</html>
