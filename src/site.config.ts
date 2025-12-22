@@ -53,7 +53,7 @@ export const theme: ThemeUserConfig = {
       // { title: 'Projects', link: '/projects' },全是作者的项目 之后再改吧，等自己有项目了再说
       { title: 'Links', link: '/links' },
       { title: 'About', link: '/about' },
-      { title: 'Archives', link: '/archives' },
+      { title: 'Timeline', link: '/archives' },
       { title: '中文', link: 'https://maxtonniu.com/' }
     ]
   },
