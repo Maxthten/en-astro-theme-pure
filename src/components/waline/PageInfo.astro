@@ -1,4 +1,4 @@
----
+<!-- ---
 import { cn } from 'astro-pure/utils'
 import Pageview from '@/components/waline/Pageview.astro'
 
@@ -25,6 +25,27 @@ const path = Astro.url.pathname
       </>
     )
   }
+</div>
+
+{view && !comment && <Pageview />} -->
+
+
+---
+import { cn } from 'astro-pure/utils'
+import Pageview from '@/components/waline/Pageview.astro'
+
+interface Props {
+  view?: boolean
+  comment?: boolean
+  class?: string
+}
+
+const { view, comment, class: className, ...props } = Astro.props
+
+const path = Astro.url.pathname
+---
+
+<div class={cn('text-base text-sm text-muted-foreground', className)} {...props}>
 </div>
 
 {view && !comment && <Pageview />}
