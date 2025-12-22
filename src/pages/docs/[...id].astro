@@ -1,0 +1,159 @@
+---
+import { render, type CollectionEntry } from 'astro:content'
+
+import { MediumZoom } from 'astro-pure/advanced'
+import { TOC } from 'astro-pure/components/pages'
+import { getBlogCollection, sortMDByDate } from 'astro-pure/server'
+import { Button } from 'astro-pure/user'
+import PageLayout from '@/layouts/ContentLayout.astro'
+
+import DocsContents from './DocsContents.astro'
+
+export const prerender = true
+
+export async function getStaticPaths() {
+  const posts = sortMDByDate(await getBlogCollection('docs'))
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: { post }
+  }))
+}
+
+type Props = {
+  post: CollectionEntry<'docs'>
+}
+
+const { post } = Astro.props
+const { Content, headings } = await render(post)
+const { description, title } = post.data
+
+const editPath = `https://github.com/cworld1/astro-theme-pure/edit/main/${post.filePath}`
+---
+
+<PageLayout meta={{ description, title }} back='/docs'>
+  <Fragment slot='sidebar'>
+    {!!headings.length && <TOC {headings} />}
+    <DocsContents class='docs-toc block mt-3' />
+  </Fragment>
+
+  <Fragment slot='header'>
+    <h1 class='text-2xl font-medium sm:mb-2 sm:text-3xl'>
+      {title}
+    </h1>
+    <div class='mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs leading-6 text-muted-foreground'>
+      {
+        // Description
+        description && (
+          <blockquote class='text-sm italic text-muted-foreground'>
+            <q>{description}</q>
+          </blockquote>
+        )
+      }
+    </div>
+    {
+
+        /* Show more docs collapse on small screen */
+        // <Collapse class='md:hidden' title='See more docs'>
+        //   <DocsContents title={false} />
+        // </Collapse>
+    }
+  </Fragment>
+
+  <Content />
+
+ {/* <div slot='bottom'>
+    <Button title='Edit on GitHub' href={editPath} class='px-3 py-2' style='font-size:1rem'>
+      {/* mingcute:edit-2-line 这里还要加
+      <!-- prettier-ignore -->
+      <svg slot='before' xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24'><!-- Icon from MingCute Icon by MingCute Design - https://github.com/Richard9394/MingCute/blob/main/LICENSE --><g fill='none' fill-rule='evenodd'><path d='m12.594 23.258l-.012.002l-.071.035l-.02.004l-.014-.004l-.071-.036q-.016-.004-.024.006l-.004.01l-.017.428l.005.02l.01.013l.104.074l.015.004l.012-.004l.104-.074l.012-.016l.004-.017l-.017-.427q-.004-.016-.016-.018m.264-.113l-.014.002l-.184.093l-.01.01l-.003.011l.018.43l.005.012l.008.008l.201.092q.019.005.029-.008l.004-.014l-.034-.614q-.005-.019-.02-.022m-.715.002a.02.02 0 0 0-.027.006l-.006.014l-.034.614q.001.018.017.024l.015-.002l.201-.093l.01-.008l.003-.011l.018-.43l-.003-.012l-.01-.01z'/><path fill='currentColor' d='M13.896 3.03a2 2 0 0 1 2.701-.117l.127.117l4.243 4.243a2 2 0 0 1 .117 2.7l-.117.128l-10.314 10.314a2 2 0 0 1-1.238.578L9.239 21H4.006a1.01 1.01 0 0 1-1.004-.9l-.006-.11v-5.233a2 2 0 0 1 .467-1.284l.12-.13L13.895 3.03ZM12.17 7.584l-7.174 7.174V19H9.24l7.174-7.174l-4.243-4.243Zm3.14-3.14L13.584 6.17l4.243 4.243l1.726-1.726z'/></g></svg>
+      Edit on GitHub
+    </Button>*/}
+    
+    {/* Show docs contents */}
+    <div class='rounded-xl border px-4 py-3 mt-3 sm:py-4 md:mt-6'>
+      <DocsContents />
+    </div>
+  </div>
+</PageLayout>
+<MediumZoom />
+
+<style>
+
+  
+
+  @media (min-width: 1300px) {
+    :global(
+      main, .bottom { transform: translateX(7.9rem); }
+      #sidebar { overflow: inherit; }
+      toc-heading { height: 100%; display: flex; flex-direction: column; }
+      toc-heading > ul { overflow-y: scroll; }
+    )
+    .docs-toc {
+      position: fixed;
+      top: 0;
+      left: -64rem;
+      margin-top: 0;
+      max-height: calc(100vh - 7rem);
+      overflow-y: scroll;
+      padding-right: 1rem !important;
+    }
+  }
+.docs-toc {
+      position: fixed;
+      top: 0;
+      left: -64rem;
+      margin-top: 0;
+      max-height: 100vh;
+      overflow-y: auto;
+      padding-right: 1rem !important;
+      z-index: 50;
+      
+      /* 👇 核心改造区域 👇 */
+      
+      /* 1. 宽度调整：改大了，现在默认能显示更多内容 */
+      width: 12rem; 
+
+      /* 2. 质感升级：重度磨砂玻璃 */
+      /* 背景更透明，让模糊效果唱主角 */
+      background-color: hsl(var(--background) / 60%);
+      /* 加大模糊力度(20px)，并增加色彩饱和度(180%)，制造高级光学感 */
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      
+      /* 3. 光影细节：制造厚度感 */
+      /* 右侧边缘高光 */
+      border-right: 1px solid hsl(var(--foreground) / 15%);
+      /* 微妙的内发光，让它看起来是一块有厚度的玻璃板 */
+      box-shadow: inset -1px 1px 2px hsl(var(--foreground) / 5%);
+      
+      /* 圆角保持不变 */
+      border-top-right-radius: 16px;
+      border-bottom-right-radius: 16px;
+      
+      /* 顺滑过渡动画 */
+      transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+
+      /* 隐藏滚动条 */
+      scrollbar-width: none; 
+      &::-webkit-scrollbar { display: none; }
+
+
+      &:hover :global(a) {
+        white-space: normal !important;  /* 允许换行 */
+        overflow: visible !important;    /* 允许显示超出的内容 */
+        text-overflow: clip !important;  /* 去掉省略号 */
+        word-break: break-word !important; /* 单词太长也强行换行 */
+      }
+
+      /* 👇 鼠标悬停状态 👇 */
+      &:hover {
+        width: 22rem; /* 展开宽度 */
+        
+        /* 悬停时背景变实一点，方便阅读文字 */
+        background-color: hsl(var(--background) / 85%);
+        /* 悬停时增加外部投影，浮起来的感觉更强 */
+        box-shadow: 12px 0 40px -10px hsl(var(--shadow) / 40%);
+        border-right-color: hsl(var(--primary) / 30%);
+      }
+    }
+</style>
