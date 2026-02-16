@@ -1,0 +1,253 @@
+---
+title: "RL Notes: The Bellman Equation"
+publishDate: 2026-02-16 20:00:00
+description: "A detailed overview of State Value and Action Value definitions, including the derivation of the Bellman Expectation Equation and its matrix representation."
+tags: ["Reinforcement Learning", "Bellman Equation", "Study Notes", "Math"]
+language: "English"
+
+---
+
+# The Bellman Equation
+
+## 1. Basic Definitions
+
+The interaction process in Reinforcement Learning can be described as follows:
+
+$$
+S_{t} \xrightarrow{A_{t}} R_{t+1}, S_{t+1}
+$$
+
+### Core Variables
+
+- $t, t+1$: Discrete time steps.
+- $S_{t}$: The state at time $t$.
+- $A_{t}$: The action taken at state $S_{t}$.
+- $R_{t+1}$: The immediate reward received after taking $A_{t}$.
+- $S_{t+1}$: The new state (Next State) transitioned to after taking $A_{t}$.
+
+**Note**: $S_{t}, A_{t}, R_{t+1}$ are all **Random Variables**. This means every step of the interaction is determined by a probability distribution; therefore, we can calculate their expectations.
+
+### Trajectory and Return
+
+The time-series trajectory formed by the interaction process is as follows:
+
+$$
+S_{t} \xrightarrow{A_{t}} R_{t+1}, S_{t+1} \xrightarrow{A_{t+1}} R_{t+2}, S_{t+2} \xrightarrow{A_{t+2}} R_{t+3}, \dots
+$$
+
+**Discounted Return** is defined as the cumulative discounted reward starting from time $t$:
+
+$$
+G_{t} = R_{t+1} + \gamma R_{t+2} + \gamma^{2}R_{t+3} + \dots = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}
+$$
+
+Where $\gamma \in [0, 1]$ is the discount factor.
+
+---
+
+## 2. State Value
+
+### Definition
+
+$v_{\pi}(s)$ is called the **State-Value Function**, or simply State Value. It is the mathematical expectation of the return $G_t$:
+
+$$
+v_{\pi}(s) = \mathbb{E}[G_{t} \mid S_{t}=s]
+$$
+
+- It is a function of the state $s$.
+- Its value depends on the current policy $\pi$.
+- It represents the "value" of being in that state. A higher value implies better prospects starting from that state under the given policy.
+
+### Core Distinction
+
+> **Return ($G_t$) vs. State Value ($v_{\pi}(s)$)**
+> 
+> * **Return** is the realized cumulative reward based on a **single** trajectory; it is a random variable.
+> * **State Value** is the mathematical expectation (statistical mean) of the Return across **all possible** trajectories (under a specific policy $\pi$).
+> * They are numerically equivalent only when both the policy and the environment are fully deterministic (i.e., there is only one unique trajectory).
+
+---
+
+## 3. Derivation of the Bellman Equation
+
+The Bellman equation describes the recursive relationship between the value of the current state and the value of future states:
+
+$$
+\begin{aligned}
+v_{\pi}(s) &= \mathbb{E}[R_{t+1} + \gamma G_{t+1} \mid S_{t}=s] \\
+&= \underbrace{\mathbb{E}[R_{t+1} \mid S_{t}=s]}_{\text{Expectation of Immediate Reward}} + \gamma \underbrace{\mathbb{E}[G_{t+1} \mid S_{t}=s]}_{\text{Expectation of Future Reward}}
+\end{aligned}
+$$
+
+The expanded general form:
+
+$$
+v_{\pi}(s) = \sum_{a \in \mathcal{A}}\pi(a|s) \left[ \sum_{r \in \mathcal{R}}p(r|s,a)r + \gamma \sum_{s^{\prime} \in \mathcal{S}}p(s^{\prime}|s,a)v_{\pi}(s^{\prime}) \right], \quad \text{for all } s \in \mathcal{S}
+$$
+
+### Part 1: Mean of Immediate Rewards
+
+$$
+\begin{aligned}
+\mathbb{E}[R_{t+1}|S_t = s] &= \sum_{a \in \mathcal{A}} \pi(a|s) \mathbb{E}[R_{t+1}|S_t = s, A_t = a] \\
+&= \sum_{a \in \mathcal{A}} \pi(a|s) \sum_{r \in \mathcal{R}} p(r|s, a)r
+\end{aligned}
+$$
+
+Here, the **Law of Total Expectation** from probability theory is applied:
+
+* $\pi(a|s)$: **Weight** (The probability of taking the action).
+* $\mathbb{E}[R|s, a]$: **Conditional Expectation** (The average reward under that action).
+* $\sum$: **Weighted Sum**.
+
+**Interpretation**: If the policy is deterministic, the summation contains only one non-zero term. However, for a general stochastic policy, we must iterate through all possible actions and weight them accordingly.
+
+### Part 2: Mean of Future Rewards
+
+$$
+\begin{aligned}
+\mathbb{E}[G_{t+1}|S_t = s] &= \sum_{s' \in \mathcal{S}} \mathbb{E}[G_{t+1}|S_t = s, S_{t+1} = s'] p(s'|s) \\
+&= \sum_{s' \in \mathcal{S}} \mathbb{E}[G_{t+1}|S_{t+1} = s'] p(s'|s) \quad \text{(Markov Property)} \\
+&= \sum_{s' \in \mathcal{S}} v_\pi(s') p(s'|s) \\
+&= \sum_{s' \in \mathcal{S}} v_\pi(s') \sum_{a \in \mathcal{A}} p(s'|s, a)\pi(a|s)
+\end{aligned}
+$$
+
+**Essence**: Calculating "the average value of the future, viewed from the current state."
+This derivation decomposes the expectation of future returns into the product of three core elements:
+
+1. **Policy** $\pi(a|s)$: How we make choices.
+2. **Dynamics** $p(s'|s,a)$: How the environment transitions states.
+3. **Next State Value** $v_\pi(s')$: How good the future is.
+
+---
+
+## 4. Matrix and Vector Forms
+
+To facilitate computation, we can define the following two auxiliary terms:
+
+1. **Average Immediate Reward Vector** $r_{\pi}$:
+
+$$
+r_{\pi}(s) \doteq \sum_{a \in \mathcal{A}} \pi(a|s) \sum_{r \in \mathcal{R}} p(r|s, a)r
+$$
+
+   *Meaning: Fuses action probabilities with the rewards generated by those actions to calculate the comprehensive expected immediate reward for the current state $s$.*
+
+2. **State Transition Matrix** $P_{\pi}$:
+   
+   $$
+   p_{\pi}(s'|s) \doteq \sum_{a \in \mathcal{A}} \pi(a|s)p(s'|s, a)
+   $$
+   
+   *Meaning: Ignores specific action choices and directly describes the statistical law of flowing from state $s$ to $s'$ under the current policy $\pi$.*
+
+We thus obtain the matrix form of the Bellman Equation (Bellman Expectation Equation):
+
+$$
+v_{\pi} = r_{\pi} + \gamma P_{\pi}v_{\pi}
+$$
+
+### Matrix Expansion Example
+
+Assuming there are 4 states:
+
+$$
+\underbrace{
+\begin{bmatrix}
+v_\pi(s_1) \\
+v_\pi(s_2) \\
+v_\pi(s_3) \\
+v_\pi(s_4)
+\end{bmatrix}
+}_{v_\pi}
+=
+\underbrace{
+\begin{bmatrix}
+r_\pi(s_1) \\
+r_\pi(s_2) \\
+r_\pi(s_3) \\
+r_\pi(s_4)
+\end{bmatrix}
+}_{r_\pi}
++ \gamma
+\underbrace{
+\begin{bmatrix}
+p_\pi(s_1|s_1) & p_\pi(s_2|s_1) & p_\pi(s_3|s_1) & p_\pi(s_4|s_1) \\
+p_\pi(s_1|s_2) & p_\pi(s_2|s_2) & p_\pi(s_3|s_2) & p_\pi(s_4|s_2) \\
+p_\pi(s_1|s_3) & p_\pi(s_2|s_3) & p_\pi(s_3|s_3) & p_\pi(s_4|s_3) \\
+p_\pi(s_1|s_4) & p_\pi(s_2|s_4) & p_\pi(s_3|s_4) & p_\pi(s_4|s_4)
+\end{bmatrix}
+}_{P_\pi}
+\underbrace{
+\begin{bmatrix}
+v_\pi(s_1) \\
+v_\pi(s_2) \\
+v_\pi(s_3) \\
+v_\pi(s_4)
+\end{bmatrix}
+}_{v_\pi}
+$$
+
+### Solution Methods
+
+**1. Closed Form Solution**
+Can be solved directly via matrix inversion:
+
+$$
+v_\pi = (I - \gamma P_\pi)^{-1} r_\pi
+$$
+
+*Drawback: When the state space is large, the computational cost of matrix inversion is too high to be feasible.*
+
+**2. Iterative Solution**
+This is the basis of **Policy Evaluation**:
+
+$$
+v_{k+1} = r_\pi + \gamma P_\pi v_k, \quad k = 0, 1, 2, \dots
+$$
+
+*Conclusion: As $k \to \infty$, the sequence converges to the true value $v_{\pi}$.*
+
+---
+
+## 5. Action Value
+
+### Definition and Comparison
+
+* **State Value ($v_{\pi}$)**: The average Return an agent gets starting from a State.
+* **Action Value ($q_{\pi}$)**: The average Return an agent gets starting from a State, **taking a specific Action first**, and then following policy $\pi$.
+
+Definition formula:
+
+$$
+q_\pi(s, a) \doteq \mathbb{E}[G_t \mid S_t = s, A_t = a]
+$$
+
+It depends on two elements: the current State-Action Pair and the subsequent policy $\pi$.
+
+### Relationship
+
+**1. State Value is the expectation of Action Value**
+
+$$
+v_\pi(s) = \sum_{a \in \mathcal{A}} \pi(a|s) q_\pi(s, a)
+$$
+
+**2. Expansion of Action Value**
+Expanding $q_\pi(s, a)$ into the sum of the immediate reward and the next state value:
+
+$$
+q_{\pi}(s,a) = \sum_{r \in \mathcal{R}} p(r|s,a)r + \gamma \sum_{s' \in \mathcal{S}} p(s'|s,a)v_{\pi}(s')
+$$
+
+Combining the above two points reconfirms the recursive structure of the Bellman Equation:
+
+$$
+v_{\pi}(s) = \sum_{a} \pi(a|s) \underbrace{\left[ \sum_{r} p(r|s,a)r + \gamma \sum_{s'} p(s'|s,a)v_{\pi}(s') \right]}_{q_{\pi}(s,a)}
+$$
+
+**Summary**: If you know all State Values, you can derive all Action Values, and vice-versa.
+
+
