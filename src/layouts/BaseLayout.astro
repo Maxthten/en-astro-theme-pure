@@ -4,8 +4,9 @@ import type { SiteMeta } from 'astro-pure/types'
 import BaseHead from '@/components/BaseHead.astro'
 import config from '@/site-config'
 
-// Import the global.css file here so that it is included on
-// all pages through the use of the <BaseLayout /> component.
+// Import global styles
+// 引入 KaTeX 样式
+import 'katex/dist/katex.min.css'
 import '@/assets/styles/global.css'
 import '@/assets/styles/app.css'
 
@@ -24,36 +25,34 @@ const {
 <html lang={config.locale.lang}>
   <head>
     <BaseHead {articleDate} {description} {ogImage} {title} />
-    <head>
-  <BaseHead {articleDate} {description} {ogImage} {title} />
-  
-  <script is:inline>
-    (function() {
-      // 获取 URL 里的 sync_theme 参数
-      const params = new URLSearchParams(window.location.search);
-      const theme = params.get('sync_theme');
-      
-      if (theme) {
-        // 1. 强制写入本地存储，这样按钮初始化时就能读到正确的值
-        localStorage.setItem('theme', theme);
+    
+    <script is:inline>
+      (function() {
+        // 获取 URL 里的 sync_theme 参数
+        const params = new URLSearchParams(window.location.search);
+        const theme = params.get('sync_theme');
         
-        // 2. 立即应用到网页，防止闪烁
-        if (theme === 'dark') {
-          document.documentElement.classList.add('dark');
-          document.documentElement.setAttribute('data-theme', 'dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-          document.documentElement.setAttribute('data-theme', 'light');
+        if (theme) {
+          // 1. 强制写入本地存储，这样按钮初始化时就能读到正确的值
+          localStorage.setItem('theme', theme);
+          
+          // 2. 立即应用到网页，防止闪烁
+          if (theme === 'dark') {
+            document.documentElement.classList.add('dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+            document.documentElement.setAttribute('data-theme', 'light');
+          }
+          
+          // 3. (关键) 派发一个事件，通知那个按钮组件“主题变了，快刷新图标”
+          // 很多 Astro 主题都监听这个事件
+          document.dispatchEvent(new CustomEvent('theme-change', { detail: { theme } }));
         }
-        
-        // 3. (关键) 派发一个事件，通知那个按钮组件“主题变了，快刷新图标”
-        // 很多 Astro 主题都监听这个事件
-        document.dispatchEvent(new CustomEvent('theme-change', { detail: { theme } }));
-      }
-    })();
-  </script>
-  <ThemeProvider />
-</head>
+      })();
+    </script>
+    <ThemeProvider />
+  </head>
 
   <body class='flex justify-center bg-background text-foreground' {...props}>
     {
@@ -129,3 +128,4 @@ const {
     });
   </script>
   </body>
+</html>
