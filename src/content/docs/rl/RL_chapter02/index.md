@@ -1,5 +1,5 @@
 ---
-title: "RL Notes: The Bellman Equation"
+title: "RL Study Notes: The Bellman Equation"
 publishDate: 2026-02-16 20:00:00
 description: "A detailed overview of State Value and Action Value definitions, including the derivation of the Bellman Expectation Equation and its matrix representation."
 tags: ["Reinforcement Learning", "Bellman Equation", "Study Notes", "Math"]
@@ -249,5 +249,3 @@ v_{\pi}(s) = \sum_{a} \pi(a|s) \underbrace{\left[ \sum_{r} p(r|s,a)r + \gamma \s
 $$
 
 **Summary**: If you know all State Values, you can derive all Action Values, and vice-versa.
-
-

@@ -1,9 +1,10 @@
 ---
-title: "RL Notes: Value Iteration and Policy Iteration"
+title: "RL Study Notes: Value Iteration and Policy Iteration"
 publishDate: 2026-02-18 10:30:00
 description: "Analyzes Value & Policy Iteration, showing how Truncated PI unifies them via evaluation steps."
 tags: ["Reinforcement Learning", "Value Iteration", "Policy Iteration", "Truncated Policy Iteration", "Study Notes"]
 language: "English"
+
 ---
 
 # Value Iteration and Policy Iteration
