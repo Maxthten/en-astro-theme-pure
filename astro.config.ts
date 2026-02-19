@@ -22,6 +22,8 @@ import {
 } from './src/plugins/shiki-offical/transformers.ts'
 import config from './src/site.config.ts'
 
+import sitemap from '@astrojs/sitemap';
+
 // https://astro.build/config
 export default defineConfig({
   // [Basic]
@@ -85,14 +87,12 @@ export default defineConfig({
   },
 
   // [Integrations]
-  integrations: [
-    // astro-pure will automatically add sitemap, mdx & unocss
-    // sitemap(),
-    // mdx(),
-    AstroPureIntegration(config)
-    // Compress recommend
-    // https://docs.astro.build/en/guides/integrations-guide/partytown/
-  ],
+  integrations: [// astro-pure will automatically add sitemap, mdx & unocss
+  // sitemap(),
+  // mdx(),
+  // Compress recommend
+  // https://docs.astro.build/en/guides/integrations-guide/partytown/
+  AstroPureIntegration(config), sitemap()],
 
   // [Experimental]
   experimental: {
