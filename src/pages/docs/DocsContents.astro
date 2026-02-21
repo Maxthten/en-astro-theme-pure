@@ -37,11 +37,12 @@ const { title = true, class: className, ...props } = Astro.props
   <ul class='mt-4 flex flex-col gap-y-5'>
     {
       Object.entries(docCategories).map(([id, title]: [string, string]) => (
+      docsByCate[id] && (
         <li>
           <h3 class='text-muted-foreground text-xs tracking-widest uppercase'>{title}</h3>
           <ul class='mt-2 flex flex-col'>
             {docsByCate[id]
-              .sort((a, b) => a.data.order - b.data.order)
+              .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
               .map((doc) => (
                 <li class='docs-item flex relative ms-2 px-3 py-1 text-foreground/75 transition-all rounded-2xl'>
                   <a class='flex-1 hover:text-foreground block truncate py-1' href={`/docs/${doc.id}`}>
@@ -51,6 +52,7 @@ const { title = true, class: className, ...props } = Astro.props
               ))}
           </ul>
         </li>
+        )
       ))
     }
   </ul>
