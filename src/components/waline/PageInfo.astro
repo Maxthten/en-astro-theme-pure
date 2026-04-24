@@ -38,14 +38,24 @@ interface Props {
   view?: boolean
   comment?: boolean
   class?: string
+  sharedId?: string
 }
 
-const { view, comment, class: className, ...props } = Astro.props
+const { view, comment, class: className, sharedId, ...props } = Astro.props
 
-const path = Astro.url.pathname
+const path = sharedId || Astro.url.pathname.split('/').filter(Boolean).at(-1) || Astro.url.pathname
 ---
 
 <div class={cn('text-base text-sm text-muted-foreground', className)} {...props}>
+  {view && <span><span class='waline-pageview-count' data-path={path}>0</span> views</span>}
+  {view && comment && <span aria-hidden='true'> | </span>}
+  {
+    comment && (
+      <a href='#waline'>
+        <span class='waline-comment-count' data-path={path}>0</span> comments
+      </a>
+    )
+  }
 </div>
 
 {view && !comment && <Pageview />}

@@ -79,6 +79,7 @@ const dateTimeOptions: Intl.DateTimeFormatOptions = {
         </span>
       )
     }
+    <slot name='extra-info' />
     {
       // Tags
       !!tags?.length && (

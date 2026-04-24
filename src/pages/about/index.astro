@@ -3,11 +3,13 @@ import { Button, Collapse, Spoiler, Timeline } from 'astro-pure/user'
 import PageLayout from '@/layouts/CommonPage.astro'
 import Substats from '@/components/about/Substats.astro'
 import ToolSection from '@/components/about/ToolSection.astro'
+import { Guestbook } from '@/components/waline'
 
 const headings = [
   { depth: 2, slug: 'hobbies', text: 'Hobbies' },
   { depth: 2, slug: 'tools', text: 'Tools' },
-  { depth: 2, slug: 'gossips', text: 'Gossips' }
+  { depth: 2, slug: 'gossips', text: 'Gossips' },
+  { depth: 2, slug: 'guestbook', text: 'Guestbook' }
   // { depth: 2, slug: 'social-networks', text: 'Social Networks' },
   // { depth: 2, slug: 'gossips', text: 'Gossips' },
   // { depth: 2, slug: 'about-blog', text: 'About Blog' }
@@ -251,4 +253,11 @@ const headings = [
       >
     </li>
   </ul> -->
+  <section class='mt-6'>
+    <h2 id='guestbook'>Guestbook</h2>
+    <p class='mb-4 text-sm text-muted-foreground'>
+      Leave a note here. A short hello is enough.
+    </p>
+    <Guestbook class='mt-3 sm:mt-4' sharedId='about-guestbook' />
+  </section>
 </PageLayout>

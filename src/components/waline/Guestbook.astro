@@ -1,4 +1,4 @@
-﻿---
+---
 import config from '@/site-config'
 
 import '@waline/client/style'
@@ -10,16 +10,16 @@ interface Props {
   sharedId?: string
 }
 
-const { class: className, sharedId } = Astro.props as Props
+const { class: className, sharedId = 'about-guestbook' } = Astro.props as Props
 ---
 
 {
   config.integ.waline.enable && (
-    <comment-component data-shared-id={sharedId}>
-      <div id='waline' class={cn('not-prose', className)}>
-        Comment seems to stuck. Try to refresh?
+    <guestbook-component data-shared-id={sharedId}>
+      <div id='waline-guestbook' class={cn('not-prose', className)}>
+        Loading guestbook...
       </div>
-    </comment-component>
+    </guestbook-component>
   )
 }
 
@@ -29,13 +29,10 @@ const { class: className, sharedId } = Astro.props as Props
   import config from 'virtual:config'
 
   const walineConfig = config.integ.waline
-  const defaultPlaceholder =
-    walineConfig.additionalConfigs?.locale?.placeholder ||
-    'Welcome to comment. Email is optional if you want reply notifications.'
-  const pendingInputHint = `${defaultPlaceholder} (Visible after review)`
+  const pendingInputHint = 'Leave a note if you want. (Visible after review)'
   const pendingStatusText = '(Sent successfully, only visible to you until approved)'
-  const commentFetchHandlersKey = '__commentWalineFetchHandlers__'
-  const commentFetchPatchedKey = '__commentWalineFetchPatched__'
+  const guestbookFetchHandlersKey = '__guestbookWalineFetchHandlers__'
+  const guestbookFetchPatchedKey = '__guestbookWalineFetchPatched__'
 
   function getWalineScope(hostname: string) {
     const host = hostname.toLowerCase()
@@ -49,7 +46,7 @@ const { class: className, sharedId } = Astro.props as Props
     return host
   }
 
-  function enhanceCommentUI(root: HTMLElement) {
+  function enhanceGuestbookUI(root: HTMLElement) {
     const info = root.querySelector<HTMLElement>('.wl-info')
 
     if (info && !info.querySelector('.wl-pending-hint')) {
@@ -141,25 +138,25 @@ const { class: className, sharedId } = Astro.props as Props
     root.querySelector<HTMLElement>('.wl-empty')?.remove()
   }
 
-  function installCommentFetchInterceptor(
+  function installGuestbookFetchInterceptor(
     path: string,
     serverURL: string,
     onWaiting: (comment: Record<string, unknown>) => void
   ) {
     const normalizedURL = `${serverURL.replace(/\/?$/, '/')}api/comment`
     const globalState = globalThis as typeof globalThis & {
-      [commentFetchHandlersKey]?: Array<{
+      [guestbookFetchHandlersKey]?: Array<{
         path: string
         serverURL: string
         onWaiting: (comment: Record<string, unknown>) => void
       }>
-      [commentFetchPatchedKey]?: boolean
+      [guestbookFetchPatchedKey]?: boolean
     }
 
-    const handlers = (globalState[commentFetchHandlersKey] ||= [])
+    const handlers = (globalState[guestbookFetchHandlersKey] ||= [])
     handlers.push({ path, serverURL: normalizedURL, onWaiting })
 
-    if (globalState[commentFetchPatchedKey]) return
+    if (globalState[guestbookFetchPatchedKey]) return
 
     const originalFetch = globalThis.fetch.bind(globalThis)
 
@@ -200,10 +197,10 @@ const { class: className, sharedId } = Astro.props as Props
       return response
     }
 
-    globalState[commentFetchPatchedKey] = true
+    globalState[guestbookFetchPatchedKey] = true
   }
 
-  class Comment extends HTMLElement {
+  class Guestbook extends HTMLElement {
     connectedCallback() {
       ;(globalThis as unknown as { __VUE_OPTIONS_API__: boolean }).__VUE_OPTIONS_API__ = true
       ;(globalThis as unknown as { __VUE_PROD_DEVTOOLS__: boolean }).__VUE_PROD_DEVTOOLS__ = false
@@ -211,60 +208,68 @@ const { class: className, sharedId } = Astro.props as Props
         globalThis as unknown as { __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: boolean }
       ).__VUE_PROD_HYDRATION_MISMATCH_DETAILS__ = false
 
-      const slug =
-        this.dataset.sharedId || window.location.pathname.split('/').filter(Boolean).at(-1) || ''
+      const slug = this.dataset.sharedId || 'about-guestbook'
       const path = `${getWalineScope(window.location.hostname)}:${slug}`
-
-      document
-        .querySelectorAll<HTMLElement>('.waline-pageview-count, .waline-comment-count')
-        .forEach((el) => {
-          el.dataset.path = path
-        })
 
       const emoji = walineConfig.emoji?.map(
         (preset) => `${config.npmCDN}/@waline/emojis@1.2.0/${preset}` as WalineEmojiPresets
       )
 
       walineInit({
-        el: '#waline',
+        el: '#waline-guestbook',
         serverURL: walineConfig.server || '',
         path,
         emoji,
-        reaction: ['/icons/heart-item.svg'],
         ...walineConfig.additionalConfigs,
+        search: false,
+        pageview: false,
+        comment: false,
+        meta: ['nick', 'mail', 'link'],
+        requiredMeta: ['nick'],
+        login: 'enable',
+        pageSize: 10,
+        wordLimit: [0, 1000],
+        imageUploader: false,
+        dark: 'html.dark',
         locale: {
-          ...walineConfig.additionalConfigs?.locale,
+          nick: 'Name',
+          mail: 'Email',
+          link: 'Website',
+          optional: 'Optional',
           placeholder: pendingInputHint,
+          sofa: 'No messages yet. You can start the conversation.',
+          submit: 'Leave a message',
+          comment: 'Messages',
           waiting: 'Waiting'
         }
       })
 
-      const root = this.querySelector<HTMLElement>('#waline')
+      const root = this.querySelector<HTMLElement>('#waline-guestbook')
 
       if (!root) return
 
-      installCommentFetchInterceptor(path, walineConfig.server || '', (comment) => {
+      installGuestbookFetchInterceptor(path, walineConfig.server || '', (comment) => {
         renderPendingPreview(root, comment)
-        enhanceCommentUI(root)
+        enhanceGuestbookUI(root)
       })
 
-      enhanceCommentUI(root)
+      enhanceGuestbookUI(root)
 
       const observer = new MutationObserver(() => {
-        enhanceCommentUI(root)
+        enhanceGuestbookUI(root)
       })
 
       observer.observe(root, { childList: true, subtree: true })
     }
   }
 
-  if (walineConfig.enable && !customElements.get('comment-component')) {
-    customElements.define('comment-component', Comment)
+  if (walineConfig.enable && !customElements.get('guestbook-component')) {
+    customElements.define('guestbook-component', Guestbook)
   }
 </script>
 
 <style>
-  #waline {
+  #waline-guestbook {
     --waline-font-size: 16px;
     --waline-white: hsl(var(--background) / var(--un-bg-opacity, 1));
     --waline-light-grey: #999;
@@ -274,68 +279,52 @@ const { class: className, sharedId } = Astro.props as Props
     --waline-color: hsl(var(--muted-foreground) / var(--un-text-opacity, 1));
     --waline-bg-color: hsl(var(--muted) / var(--un-bg-opacity, 1));
     --waline-bg-color-light: hsl(var(--input) / var(--un-text-opacity, 1));
-    --waline-bg-color-hover: #f0f0f0;
     --waline-border-color: hsl(var(--border) / var(--un-border-opacity, 1));
-    --waline-disable-bg-color: #f8f8f8;
-    --waline-disable-color: #bbb;
-    --waline-code-bg-color: #282c34;
-    --waline-bq-color: #f0f0f0;
-    --waline-avatar-size: 3.25rem;
-    --waline-m-avatar-size: calc(var(--waline-avatar-size) * 9 / 13);
-    --waline-badge-color: hsl(var(--border) / var(--un-border-opacity, 1));
-    --waline-badge-font-size: 0.775em;
-    --waline-info-bg-color: var(--waline-bg-color-light);
-    --waline-info-color: var(--waline-color);
-    --waline-info-font-size: 0.625em;
     --waline-border: 1px solid var(--waline-border-color);
     --waline-avatar-radius: 50%;
     --waline-box-shadow: none;
   }
 
-  #waline :global(.wl-content, .wl-text, .wl-comment-text, .wl-item, .wl-card-item, a) {
+  #waline-guestbook :global(.wl-content, .wl-text, .wl-comment-text, .wl-item, .wl-card-item, a) {
     max-width: 100%;
   }
 
-  #waline :global(.wl-meta, .wl-content, .wl-text, .wl-comment-text) {
+  #waline-guestbook :global(.wl-meta, .wl-content, .wl-text, .wl-comment-text) {
     word-wrap: break-word;
     word-break: break-word;
     overflow-wrap: anywhere;
   }
 
-  #waline :global(a) {
-    display: inline-block;
-  }
-
-  #waline :global(.wl-info) {
+  #waline-guestbook :global(.wl-info) {
     gap: 0.5rem;
   }
 
-  #waline :global(.wl-pending-hint) {
+  #waline-guestbook :global(.wl-pending-hint) {
     margin-inline-end: auto;
     color: hsl(var(--muted-foreground) / 0.9);
     font-size: 0.75em;
     white-space: nowrap;
   }
 
-  #waline :global(.wl-pending-status) {
+  #waline-guestbook :global(.wl-pending-status) {
     background: rgb(254 249 195);
     color: rgb(161 98 7);
   }
 
-  #waline :global(.wl-pending-comment > .wl-card) {
+  #waline-guestbook :global(.wl-pending-comment > .wl-card) {
     border-bottom-color: rgb(253 224 71 / 0.55);
   }
 
-  :global(.dark) #waline :global(.wl-pending-status) {
+  :global(.dark) #waline-guestbook :global(.wl-pending-status) {
     background: rgb(113 63 18 / 0.35);
     color: rgb(253 224 71);
   }
 
-  #waline :global(.wl-pending-preview-list) {
+  #waline-guestbook :global(.wl-pending-preview-list) {
     margin-bottom: 1rem;
   }
 
-  #waline :global(.wl-pending-preview) {
+  #waline-guestbook :global(.wl-pending-preview) {
     margin-bottom: 0.75rem;
     padding: 0.875rem 1rem;
     border: 1px solid rgb(250 204 21 / 0.55);
@@ -344,7 +333,7 @@ const { class: className, sharedId } = Astro.props as Props
     color: hsl(var(--foreground) / var(--un-text-opacity, 1));
   }
 
-  #waline :global(.wl-pending-preview-head) {
+  #waline-guestbook :global(.wl-pending-preview-head) {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -352,14 +341,14 @@ const { class: className, sharedId } = Astro.props as Props
     margin-bottom: 0.625rem;
   }
 
-  #waline :global(.wl-pending-preview-user) {
+  #waline-guestbook :global(.wl-pending-preview-user) {
     display: flex;
     align-items: center;
     gap: 0.75rem;
     min-width: 0;
   }
 
-  #waline :global(.wl-pending-preview-avatar) {
+  #waline-guestbook :global(.wl-pending-preview-avatar) {
     width: 2.5rem;
     height: 2.5rem;
     border-radius: 999px;
@@ -368,107 +357,49 @@ const { class: className, sharedId } = Astro.props as Props
     background: rgb(255 255 255 / 0.7);
   }
 
-  #waline :global(.wl-pending-preview-meta) {
+  #waline-guestbook :global(.wl-pending-preview-meta) {
     min-width: 0;
   }
 
-  #waline :global(.wl-pending-preview-nick) {
+  #waline-guestbook :global(.wl-pending-preview-nick) {
     font-size: 0.9375rem;
     font-weight: 600;
     line-height: 1.35;
   }
 
-  #waline :global(.wl-pending-preview-status) {
+  #waline-guestbook :global(.wl-pending-preview-status) {
     margin-top: 0.2rem;
     color: rgb(161 98 7);
     font-size: 0.75rem;
     line-height: 1.5;
   }
 
-  #waline :global(.wl-pending-preview-time) {
+  #waline-guestbook :global(.wl-pending-preview-time) {
     flex-shrink: 0;
     color: rgb(161 98 7);
     font-size: 0.75rem;
     line-height: 1.5;
   }
 
-  #waline :global(.wl-pending-preview-content) {
+  #waline-guestbook :global(.wl-pending-preview-content) {
     white-space: pre-wrap;
     word-break: break-word;
     overflow-wrap: anywhere;
     line-height: 1.8;
   }
 
-  :global(.dark) #waline :global(.wl-pending-preview) {
+  :global(.dark) #waline-guestbook :global(.wl-pending-preview) {
     border-color: rgb(202 138 4 / 0.45);
     background: rgb(69 26 3 / 0.35);
   }
 
-  :global(.dark) #waline :global(.wl-pending-preview-avatar) {
+  :global(.dark) #waline-guestbook :global(.wl-pending-preview-avatar) {
     border-color: rgb(202 138 4 / 0.4);
     background: rgb(24 24 27 / 0.65);
   }
 
-  :global(.dark) #waline :global(.wl-pending-preview-status),
-  :global(.dark) #waline :global(.wl-pending-preview-time) {
+  :global(.dark) #waline-guestbook :global(.wl-pending-preview-status),
+  :global(.dark) #waline-guestbook :global(.wl-pending-preview-time) {
     color: rgb(253 224 71);
-  }
-
-  #waline :global(.wl-reaction-title, .wl-reaction-text) {
-    display: none;
-  }
-
-  #waline :global(.wl-reaction) {
-    overflow: visible;
-    margin-bottom: 0.5em;
-  }
-
-  #waline :global(.wl-reaction-img) {
-    width: auto;
-    display: flex;
-    height: 35px;
-    align-items: center;
-    column-gap: 0.4rem;
-  }
-
-  #waline :global(.wl-reaction-votes) {
-    position: inherit;
-    top: inherit;
-    min-width: inherit;
-    inset-inline-end: inherit;
-    display: flex;
-    font-weight: normal;
-    border: none;
-    background: none;
-    color: inherit;
-    padding: 0.2rem 0.4rem;
-    border-radius: 6px;
-  }
-
-  #waline :global(.wl-reaction-loading) {
-    position: inherit;
-    top: inherit;
-    min-width: inherit;
-  }
-
-  #waline :global(.wl-reaction-item.active .wl-reaction-votes) {
-    background: var(--waline-theme-color);
-    color: var(--waline-bg-color);
-  }
-
-  #waline :global(.wl-reaction-votes:after) {
-    margin-left: 0.25em;
-    content: 'Like(s)';
-    display: inline-block;
-    clear: both;
-    border: 0;
-  }
-
-  #waline :global(.wl-reaction img) {
-    filter: invert(25%);
-  }
-
-  :global(.dark) #waline :global(.wl-reaction img) {
-    filter: invert(75%);
   }
 </style>
